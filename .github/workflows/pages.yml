@@ -1,0 +1,39 @@
+name: Deploy to GitHub Pages
+
+# 每次推送 main(仪表盘 15 分钟刷新 + /yan 研究报告)都会部署。
+# Actions 管线取代旧版 legacy 构建:被后一次推送顶掉的部署是干净地 cancel,
+# 不再像 legacy 那样卡队列判 errored 狂发失败邮件。
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 只保留最新一次部署;进行中的旧部署直接取消(cancel,不发失败邮件)。
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
